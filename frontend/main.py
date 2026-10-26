@@ -38,6 +38,7 @@ from a2a.types import (
     Part,
     Role,
     TaskArtifactUpdateEvent,
+    TaskStatusUpdateEvent,
     TextPart,
     TransportProtocol,
 )
@@ -133,12 +134,27 @@ def _extract_parts(parts: list) -> list[dict]:
     for p in parts:
         root = getattr(p, "root", p)
         if isinstance(root, TextPart) and getattr(root, "text", None):
-            out.append({"kind": "text", "text": root.text})
+            text = root.text
+            # Filter out internal memory-service warning text from reaching user bubbles
+            if "Cannot add session to memory: memory service is not available" in text:
+                continue
+            out.append({"kind": "text", "text": text})
         elif getattr(root, "data", None) is not None:
+            data = root.data
             meta = getattr(root, "metadata", None) or {}
-            mime = meta.get("mimeType") if isinstance(meta, dict) else None
+            # Support both top-level metadata and nested metadata dict inside data
+            mime = None
+            if isinstance(meta, dict):
+                mime = meta.get("mimeType")
+            if not mime and isinstance(data, dict):
+                nested_meta = data.get("metadata")
+                if isinstance(nested_meta, dict):
+                    mime = nested_meta.get("mimeType")
+            
             if mime == _A2UI_MIME:
-                out.append({"kind": "a2ui", "data": root.data})
+                # If wrapped as {"kind": "data", "metadata": ..., "data": <a2ui_msg>}, extract the actual A2UI payload
+                actual_data = data.get("data") if (isinstance(data, dict) and "data" in data and ("beginRendering" in data.get("data", {}) or "surfaceUpdate" in data.get("data", {}))) else data
+                out.append({"kind": "a2ui", "data": actual_data})
         elif isinstance(root, FilePart):
             uri = getattr(getattr(root, "file", None), "uri", None)
             if uri:
@@ -174,7 +190,7 @@ async def chat(req: Request):
         )
 
         last_task = None
-        got_artifact_update = False
+        got_parts = False
         async for event in a2a_client.send_message(msg):
             if not isinstance(event, tuple):
                 continue
@@ -184,11 +200,18 @@ async def chat(req: Request):
                 if getattr(task, "context_id", None):
                     _contexts[user_id] = task.context_id
             if isinstance(update, TaskArtifactUpdateEvent):
-                got_artifact_update = True
-                parts.extend(_extract_parts(update.artifact.parts))
+                extracted = _extract_parts(update.artifact.parts)
+                if extracted:
+                    got_parts = True
+                    parts.extend(extracted)
+            elif isinstance(update, TaskStatusUpdateEvent) and getattr(update.status, "message", None):
+                extracted = _extract_parts(update.status.message.parts)
+                if extracted:
+                    got_parts = True
+                    parts.extend(extracted)
 
         # Non-streaming fallback: pull parts from the final task's artifacts.
-        if not got_artifact_update and last_task is not None:
+        if not got_parts and last_task is not None:
             for artifact in getattr(last_task, "artifacts", None) or []:
                 parts.extend(_extract_parts(artifact.parts))
 
