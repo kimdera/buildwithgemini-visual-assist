@@ -32,8 +32,8 @@ async def run():
         
         # Wait until typing indicator disappears and A2UI card is rendered
         print("Waiting for prompt 1 response...")
-        await page.wait_for_selector(".msg-wrapper.agent .a2card", timeout=45000)
-        await page.wait_for_timeout(5000) # Let viewer appreciate the rich card
+        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=45000)
+        await page.wait_for_timeout(4500) # Let viewer appreciate the rich card
         
         # 2. Second prompt: Medication Schedule & Tactile Identifiers (exercises FDA tool + Memory + Structured Table/Text)
         prompt_2 = "What is my medication schedule and tactile cues for Lisinopril?"
@@ -44,8 +44,8 @@ async def run():
         
         print("Waiting for prompt 2 response...")
         # Wait until second agent message is no longer typing
-        await page.wait_for_selector(".msg-wrapper.agent:nth-of-type(2) .bubble:not(:has(.typing-indicator))", timeout=45000)
-        await page.wait_for_timeout(5000)
+        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=45000)
+        await page.wait_for_timeout(4500)
         
         # 3. Third prompt: Visual Aid Card Image Generation (exercises Imagen 3.0 tool + Cloud Storage upload + Card Image embed)
         prompt_3 = "Generate a visual aid card image for my Lisinopril medication"
@@ -56,8 +56,8 @@ async def run():
         
         print("Waiting for prompt 3 visual aid image and card...")
         # Wait until prompt 3 response arrives (typing indicator is replaced by content)
-        await page.wait_for_selector(".msg-wrapper.agent:nth-of-type(3) .bubble:not(:has(.typing-indicator))", timeout=90000)
-        await page.wait_for_timeout(7000) # Give plenty of time to view the generated image and details
+        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=60000)
+        await page.wait_for_timeout(6000) # Give plenty of time to view the generated image and details
         
         print("Closing browser recording...")
         await context.close()
