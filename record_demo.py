@@ -30,10 +30,10 @@ async def run():
         await page.wait_for_timeout(800)
         await page.click("button[type='submit']")
         
-        # Wait until typing indicator disappears and A2UI card is rendered
+        # Wait until agent 1 response arrives and finishes typing
         print("Waiting for prompt 1 response...")
-        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=45000)
-        await page.wait_for_timeout(4500) # Let viewer appreciate the rich card
+        await page.locator(".msg-wrapper.agent").nth(0).locator(".bubble:not(:has(.typing-indicator))").wait_for(timeout=60000)
+        await page.wait_for_timeout(6000) # Ample time for viewer to read pantry card
         
         # 2. Second prompt: Medication Schedule & Tactile Identifiers (exercises FDA tool + Memory + Structured Table/Text)
         prompt_2 = "What is my medication schedule and tactile cues for Lisinopril?"
@@ -43,9 +43,9 @@ async def run():
         await page.click("button[type='submit']")
         
         print("Waiting for prompt 2 response...")
-        # Wait until second agent message is no longer typing
-        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=45000)
-        await page.wait_for_timeout(4500)
+        # Wait until agent 2 response arrives and finishes typing
+        await page.locator(".msg-wrapper.agent").nth(1).locator(".bubble:not(:has(.typing-indicator))").wait_for(timeout=60000)
+        await page.wait_for_timeout(8000) # Give viewer plenty of time to read the schedule and tactile cues!
         
         # 3. Third prompt: Visual Aid Card Image Generation (exercises Imagen 3.0 tool + Cloud Storage upload + Card Image embed)
         prompt_3 = "Generate a visual aid card image for my Lisinopril medication"
@@ -55,9 +55,9 @@ async def run():
         await page.click("button[type='submit']")
         
         print("Waiting for prompt 3 visual aid image and card...")
-        # Wait until prompt 3 response arrives (typing indicator is replaced by content)
-        await page.wait_for_selector(".msg-wrapper.agent:last-of-type .bubble:not(:has(.typing-indicator))", timeout=60000)
-        await page.wait_for_timeout(6000) # Give plenty of time to view the generated image and details
+        # Wait until agent 3 response arrives and finishes typing
+        await page.locator(".msg-wrapper.agent").nth(2).locator(".bubble:not(:has(.typing-indicator))").wait_for(timeout=90000)
+        await page.wait_for_timeout(8000) # Give viewer plenty of time to view the generated image and details
         
         print("Closing browser recording...")
         await context.close()
