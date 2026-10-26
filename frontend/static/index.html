@@ -491,11 +491,15 @@ function formatMarkdown(text) {
     }
   }
   // Convert standard markdown bold and line breaks
-  return text
+  let formatted = text
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br/>');
+
+  // Convert raw image URLs to direct high-contrast image preview cards
+  formatted = formatted.replace(/(https:\/\/storage\.googleapis\.com\/[^\s<"]+?\.(?:png|jpg|jpeg|webp))/gi, '<a href="$1" target="_blank" rel="noopener"><img src="$1" class="preview-image" alt="Generated Visual Aid Card"/></a>');
+  return formatted;
 }
 
 function renderReply(b, parts) {
