@@ -428,7 +428,11 @@ function buildNode(id, comps, seen) {
     case "Image": {
       const src = boundStr(props.url || props.src);
       if (!/^https?:\/\//i.test(src)) return null;   // only allow safe URLs
-      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.altText || props.alt) || ""; return img;
+      const img = el("img", "a2img"); 
+      img.src = src; 
+      img.alt = boundStr(props.altText || props.alt) || "";
+      img.onload = () => { log.scrollTop = log.scrollHeight; };
+      return img;
     }
     case "Icon": {
       const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;

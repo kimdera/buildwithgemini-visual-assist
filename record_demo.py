@@ -55,13 +55,25 @@ async def run():
         await page.click("button[type='submit']")
         
         print("Waiting for prompt 3 visual aid image and card...")
-        # Wait until agent 3 response arrives and finishes typing
-        await page.locator(".msg-wrapper.agent").nth(2).locator(".bubble:not(:has(.typing-indicator))").wait_for(timeout=90000)
-        await page.wait_for_timeout(8000) # Give viewer plenty of time to view the generated image and details
+        # Wait until agent 3 response arrives (typing indicator is detached/removed)
+        agent_3_bubble = page.locator(".msg-wrapper.agent").nth(2).locator(".bubble")
+        await agent_3_bubble.locator(".typing-indicator").wait_for(state="detached", timeout=90000)
+        
+        # Wait for the visual aid image to be rendered and visible
+        print("Waiting for image to become visible...")
+        img_locator = agent_3_bubble.locator("img.a2img")
+        await img_locator.wait_for(state="visible", timeout=30000)
+        
+        # Smoothly scroll the card into full center view so all details & image are prominent
+        print("Scrolling card into full view...")
+        await page.evaluate("const el = document.getElementById('log'); if (el) el.scrollTop = el.scrollHeight;")
+        await page.wait_for_timeout(1000)
+        await agent_3_bubble.scroll_into_view_if_needed()
+        await page.wait_for_timeout(12000) # Give viewer plenty of time to view the entire generated image and card details!
         
         print("Closing browser recording...")
         await context.close()
         await browser.close()
-        print("Browser recording closed.")
+        print("Browser recording closed cleanly.")
 
 asyncio.run(run())
