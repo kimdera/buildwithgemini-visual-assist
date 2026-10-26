@@ -55,8 +55,9 @@ async def run():
         await page.click("button[type='submit']")
         
         print("Waiting for prompt 3 visual aid image and card...")
-        await page.wait_for_selector(".msg-wrapper.agent:nth-of-type(3) img", timeout=60000)
-        await page.wait_for_timeout(6000) # Give plenty of time to view the generated image and details
+        # Wait until prompt 3 response arrives (typing indicator is replaced by content)
+        await page.wait_for_selector(".msg-wrapper.agent:nth-of-type(3) .bubble:not(:has(.typing-indicator))", timeout=90000)
+        await page.wait_for_timeout(7000) # Give plenty of time to view the generated image and details
         
         print("Closing browser recording...")
         await context.close()
